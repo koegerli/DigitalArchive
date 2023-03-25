@@ -25,11 +25,11 @@ public partial class MainWindow : Window
 {
     private readonly MainViewModel _viewModel;
 
-    public MainWindow()
+    public MainWindow(MainViewModel viewModel)
     {
         InitializeComponent();
 
-        _viewModel = new MainViewModel(new FileSystemService(@"C:\temp\", @"C:\temp2\"));
+        _viewModel = viewModel;
         _viewModel.PropertyChanged += ViewModel_PropertyChanged;
         
         DataContext = _viewModel;
@@ -39,7 +39,7 @@ public partial class MainWindow : Window
     {
         if (e.PropertyName == nameof(MainViewModel.FileToDisplay))
         {
-            //PdfViewer.Navigate(_viewModel.FileToDisplay?.Path ?? "about:blank");
+            PdfViewer.Navigate(_viewModel.FileToDisplay?.Path ?? "about:blank");
         }
     }
 }

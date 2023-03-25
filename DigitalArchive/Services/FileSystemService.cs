@@ -1,4 +1,6 @@
 ﻿using DigitalArchive.Models;
+using DigitalArchive.Options;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,10 +21,13 @@ public class FileSystemService
     public event EventHandler? InputItemsChanged;
     public event EventHandler? OutputItemsChanged;
 
-    public FileSystemService(string inputFolderPath, string outputFolderPath)
+    public FileSystemService(IOptions<FileSystemOptions> options)
     {
-        _inputFolderPath = inputFolderPath;
-        _outputFolderPath = outputFolderPath;
+        _inputFolderPath = options.Value.InputPath;
+        _outputFolderPath = options.Value.OutputPath;
+
+        Directory.CreateDirectory(_inputFolderPath);
+        Directory.CreateDirectory(_outputFolderPath);
 
         _inputWatcher = CreateWatcher(_inputFolderPath, () => InputItemsChanged?.Invoke(this, EventArgs.Empty));
         _outputWatcher = CreateWatcher(_outputFolderPath, () => OutputItemsChanged?.Invoke(this, EventArgs.Empty));
@@ -50,21 +55,23 @@ public class FileSystemService
         var outputFolder = Path.Combine(_outputFolderPath, DateTime.Now.Year.ToString());
         Directory.CreateDirectory(outputFolder);
         var outputPath = Path.Combine(outputFolder, $"{index}.pdf");
-        File.Copy(inputPath, outputPath);
-        File.Delete(inputPath);
+        File.Move(inputPath, outputPath);
     }
 
     public int GetHighestNumberInOutput()
     {
-        return Directory.EnumerateFiles(_outputFolderPath, "*.*", SearchOption.AllDirectories)
+        var numberedFiles = Directory.EnumerateFiles(_outputFolderPath, "*.*", SearchOption.AllDirectories)
             .Select(x =>
             {
                 var fileName = Path.GetFileNameWithoutExtension(x);
                 var isNumber = int.TryParse(fileName, out var number);
                 return new { IsNumber = isNumber, Number = number };
             })
-            .Where(x => x.IsNumber)
-            .Max(x => x.Number);
+            .Where(x => x.IsNumber);
+
+        return numberedFiles.Any() 
+            ? numberedFiles.Max(x => x.Number)
+            : 0;
     }
 
     private IEnumerable<ExplorerItem> GetExplorerItems(string path, string filePattern)
