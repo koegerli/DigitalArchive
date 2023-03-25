@@ -47,8 +47,8 @@ public class FileSystemService
         return watcher;
     }
 
-    public IEnumerable<ExplorerItem> GetInputItems() => GetExplorerItems(_inputFolderPath, "*.pdf");
-    public IEnumerable<ExplorerItem> GetOutputItems() => GetExplorerItems(_outputFolderPath, "*.pdf");
+    public IEnumerable<ExplorerItem> GetInputItems() => GetExplorerItems(_inputFolderPath, "*.pdf", includeEmptyFolders: false);
+    public IEnumerable<ExplorerItem> GetOutputItems() => GetExplorerItems(_outputFolderPath, "*.pdf", includeEmptyFolders: true);
 
     public IEnumerable<ArchiveItem> GetArchiveItems(string path)
     {
@@ -87,13 +87,13 @@ public class FileSystemService
             : 0;
     }
 
-    private IEnumerable<ExplorerItem> GetExplorerItems(string path, string filePattern)
+    private IEnumerable<ExplorerItem> GetExplorerItems(string path, string filePattern, bool includeEmptyFolders)
     {
         var folders = Directory.GetDirectories(path)
             .Select(x =>
             {
-                var items = GetExplorerItems(x, filePattern);
-                if (items.Any())
+                var items = GetExplorerItems(x, filePattern, includeEmptyFolders);
+                if (items.Any() || includeEmptyFolders)
                 {
                     return CreateFolderItem(x, items);
                 }

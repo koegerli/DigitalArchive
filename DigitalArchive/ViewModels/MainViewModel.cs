@@ -55,6 +55,8 @@ public partial class MainViewModel : ObservableObject
         _fileSystemService.InputItemsChanged += (_, __) => UpdateInputItems();
         _fileSystemService.OutputItemsChanged += (_, __) => UpdateOutputItems();
 
+        ArchiveCategories = new ObservableCollection<ArchiveCategory>(_fileSystemService.GetArchiveCategories());
+        SelectedArchiveCategory = ArchiveCategories.FirstOrDefault();
         UpdateInputItems();
         UpdateOutputItems();
     }
@@ -67,11 +69,6 @@ public partial class MainViewModel : ObservableObject
     private void UpdateOutputItems()
     {
         OutputItems = new ObservableCollection<ExplorerItem>(_fileSystemService.GetOutputItems());
-
-        ArchiveCategories = new ObservableCollection<ArchiveCategory>(_fileSystemService.GetArchiveCategories());
-        if (SelectedArchiveCategory is null && ArchiveCategories.Any())
-            SelectedArchiveCategory = ArchiveCategories.First();
-        
         UpdateArchiveItems();
         NextIndex = _fileSystemService.GetHighestNumberInOutput() + 1;
     }
@@ -110,12 +107,12 @@ public partial class MainViewModel : ObservableObject
         DisplayPath = (value is not null && value.Type == ExplorerItemType.File) ? value.Path : null;
     }
 
-    partial void OnSelectedArchiveItemChanged(ArchiveItem value)
+    partial void OnSelectedArchiveItemChanged(ArchiveItem? value)
     {
         DisplayPath = (value is not null) ? value.Path : null;
     }
 
-    partial void OnSelectedArchiveCategoryChanged(ArchiveCategory value)
+    partial void OnSelectedArchiveCategoryChanged(ArchiveCategory? value)
     {
         UpdateArchiveItems();
     }
