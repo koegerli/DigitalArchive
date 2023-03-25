@@ -73,7 +73,13 @@ public partial class MainViewModel : ObservableObject
     {
         var item = SelectedInputItem;
         SelectedInputItem = null;
-        _fileSystemService.MoveToOutputFolder(item!.Path, NextIndex);
+
+        //Dies ist ein Workaround, weil der Webbrowser das File nicht sofort freigibt. Deshalb muss kurz gewartet werden.
+        Task.Run(async () =>
+        {
+            await Task.Delay(100);
+            _fileSystemService.MoveToOutputFolder(item!.Path, NextIndex);
+        });
     }
 
     private bool CanProcessFile() => SelectedInputItem is not null && SelectedInputItem.Type == ExplorerItemType.File;
