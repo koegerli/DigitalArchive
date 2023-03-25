@@ -39,13 +39,13 @@ public partial class MainWindow : Window
 
     private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(MainViewModel.FileToDisplay))
+        if (e.PropertyName == nameof(MainViewModel.DisplayPath))
         {
             PdfViewer.Navigate("about:blank");
             
-            if (_viewModel.FileToDisplay is not null)
+            if (_viewModel.DisplayPath is not null)
             {
-                PdfViewer.Navigate(_viewModel.FileToDisplay.Path);
+                PdfViewer.Navigate(_viewModel.DisplayPath);
             }
         }
     }

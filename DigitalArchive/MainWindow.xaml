@@ -42,15 +42,21 @@
         <Grid Grid.Column="4">
             <Grid.RowDefinitions>
                 <RowDefinition Height="40" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
+                <RowDefinition Height="2*" />
             </Grid.RowDefinitions>
 
             <TextBlock Grid.Row="0" >
                 <Run>Nächste Belegnummer:</Run>
                 <Run Text="{Binding NextIndex}" FontSize="25" />
             </TextBlock>
-            
-            <views:FileExplorerView Grid.Row="1" Items="{Binding OutputItems}" SelectedItem="{Binding SelectedOutputItem, Mode=TwoWay}" />
+
+            <ComboBox Grid.Row="1" ItemsSource="{Binding ArchiveCategories}" SelectedItem="{Binding SelectedArchiveCategory, Mode=TwoWay}" DisplayMemberPath="Name" />
+
+            <ListView Grid.Row="2" ItemsSource="{Binding ArchiveItems}" SelectedItem="{Binding SelectedArchiveItem, Mode=TwoWay}" DisplayMemberPath="Name" />
+
+            <views:FileExplorerView Grid.Row="3" Items="{Binding OutputItems}" SelectedItem="{Binding SelectedOutputItem, Mode=TwoWay}" />
 
         </Grid>
 

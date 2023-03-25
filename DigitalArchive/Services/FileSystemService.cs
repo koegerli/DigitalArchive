@@ -50,6 +50,19 @@ public class FileSystemService
     public IEnumerable<ExplorerItem> GetInputItems() => GetExplorerItems(_inputFolderPath, "*.pdf");
     public IEnumerable<ExplorerItem> GetOutputItems() => GetExplorerItems(_outputFolderPath, "*.pdf");
 
+    public IEnumerable<ArchiveItem> GetArchiveItems(string path)
+    {
+        return Directory.EnumerateFiles(path, "*.pdf", SearchOption.AllDirectories)
+            .Select(CreateArchiveItem);
+    }
+
+    public IEnumerable<ArchiveCategory> GetArchiveCategories()
+    {
+        return Directory.EnumerateDirectories(_outputFolderPath, "*", SearchOption.AllDirectories)
+            .Where(x => Directory.EnumerateFiles(x, "*.pdf", SearchOption.AllDirectories).Any())
+            .Select(CreateArchiveCategory);
+    }
+
     public void MoveToOutputFolder(string inputPath, int index)
     {
         var outputFolder = Path.Combine(_outputFolderPath, DateTime.Now.Year.ToString());
@@ -113,6 +126,24 @@ public class FileSystemService
             Path = path,
             Children = children.ToList(),
             Type = ExplorerItemType.Folder,
+        };
+    }
+
+    private ArchiveItem CreateArchiveItem(string path)
+    {
+        return new ArchiveItem
+        {
+            Name = Path.GetFileName(path),
+            Path = path,
+        };
+    }
+
+    private ArchiveCategory CreateArchiveCategory(string path)
+    {
+        return new ArchiveCategory
+        {
+            Name = Path.GetFileName(path),
+            Path = path,
         };
     }
 }

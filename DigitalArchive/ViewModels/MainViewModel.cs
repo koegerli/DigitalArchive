@@ -19,7 +19,7 @@ public partial class MainViewModel : ObservableObject
     private readonly FileSystemService _fileSystemService;
 
     [ObservableProperty]
-    public ObservableCollection<ExplorerItem> _inputItems = new();
+    private ObservableCollection<ExplorerItem> _inputItems = new();
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(ProcessFileCommand))]
@@ -29,13 +29,25 @@ public partial class MainViewModel : ObservableObject
     private int _nextIndex;
 
     [ObservableProperty]
-    public ObservableCollection<ExplorerItem> _outputItems = new();
+    private ObservableCollection<ExplorerItem> _outputItems = new();
 
     [ObservableProperty]
     private ExplorerItem? _selectedOutputItem;
 
     [ObservableProperty]
-    private ExplorerItem? _fileToDisplay;
+    private string? _displayPath;
+
+    [ObservableProperty]
+    private ObservableCollection<ArchiveItem> _archiveItems = new();
+
+    [ObservableProperty]
+    private ArchiveItem? _selectedArchiveItem;
+
+    [ObservableProperty]
+    private ObservableCollection<ArchiveCategory> _archiveCategories = new();
+
+    [ObservableProperty]
+    private ArchiveCategory? _selectedArchiveCategory;
 
     public MainViewModel(FileSystemService fileSystemService)
     {
@@ -55,17 +67,21 @@ public partial class MainViewModel : ObservableObject
     private void UpdateOutputItems()
     {
         OutputItems = new ObservableCollection<ExplorerItem>(_fileSystemService.GetOutputItems());
+
+        ArchiveCategories = new ObservableCollection<ArchiveCategory>(_fileSystemService.GetArchiveCategories());
+        if (SelectedArchiveCategory is null && ArchiveCategories.Any())
+            SelectedArchiveCategory = ArchiveCategories.First();
+        
+        UpdateArchiveItems();
         NextIndex = _fileSystemService.GetHighestNumberInOutput() + 1;
     }
 
-    partial void OnSelectedInputItemChanged(ExplorerItem? value)
+    private void UpdateArchiveItems()
     {
-        FileToDisplay = (value is not null && value.Type == ExplorerItemType.File) ? value : null;
-    }
-
-    partial void OnSelectedOutputItemChanged(ExplorerItem? value)
-    {
-        FileToDisplay = (value is not null && value.Type == ExplorerItemType.File) ? value : null;
+        if (SelectedArchiveCategory is null)
+            ArchiveItems.Clear();
+        else
+            ArchiveItems = new ObservableCollection<ArchiveItem>(_fileSystemService.GetArchiveItems(SelectedArchiveCategory.Path));
     }
 
     [RelayCommand(CanExecute = nameof(CanProcessFile))]
@@ -84,4 +100,23 @@ public partial class MainViewModel : ObservableObject
 
     private bool CanProcessFile() => SelectedInputItem is not null && SelectedInputItem.Type == ExplorerItemType.File;
 
+    partial void OnSelectedInputItemChanged(ExplorerItem? value)
+    {
+        DisplayPath = (value is not null && value.Type == ExplorerItemType.File) ? value.Path : null;
+    }
+
+    partial void OnSelectedOutputItemChanged(ExplorerItem? value)
+    {
+        DisplayPath = (value is not null && value.Type == ExplorerItemType.File) ? value.Path : null;
+    }
+
+    partial void OnSelectedArchiveItemChanged(ArchiveItem value)
+    {
+        DisplayPath = (value is not null) ? value.Path : null;
+    }
+
+    partial void OnSelectedArchiveCategoryChanged(ArchiveCategory value)
+    {
+        UpdateArchiveItems();
+    }
 }
