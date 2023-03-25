@@ -1,0 +1,58 @@
+﻿<Window x:Class="DigitalArchive.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DigitalArchive"
+        xmlns:vm="clr-namespace:DigitalArchive.ViewModels"
+        xmlns:model="clr-namespace:DigitalArchive.Models"
+        xmlns:views="clr-namespace:DigitalArchive.Views"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=vm:MainViewModel, IsDesignTimeCreatable=False}"
+        Title="MainWindow" Width="1200" Height="800">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300" />
+            <ColumnDefinition Width="5" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="5" />
+            <ColumnDefinition Width="300" />
+        </Grid.ColumnDefinitions>
+
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="40" />
+            </Grid.RowDefinitions>
+            
+            <views:FileExplorerView Grid.Row="0" Items="{Binding InputItems}" SelectedItem="{Binding SelectedInputItem, Mode=TwoWay}" />
+
+            <Button Grid.Row="1" Content="Ablegen" Command="{Binding ProcessFileCommand}" />
+
+        </Grid>
+
+
+        <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Center" />
+
+        <WebBrowser x:Name="PdfViewer" Grid.Column="2" />
+
+        <GridSplitter Grid.Column="3" Width="5" HorizontalAlignment="Center" />
+
+        <Grid Grid.Column="4">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="40" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" >
+                <Run>Nächste Belegnummer:</Run>
+                <Run Text="{Binding NextIndex}" FontSize="25" />
+            </TextBlock>
+            
+            <views:FileExplorerView Grid.Row="1" Items="{Binding OutputItems}" SelectedItem="{Binding SelectedOutputItem, Mode=TwoWay}" />
+
+        </Grid>
+
+    </Grid>
+</Window>
