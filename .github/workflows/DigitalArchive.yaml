@@ -34,7 +34,7 @@ jobs:
       run: dotnet build --configuration Release -p:PublishSingleFile=true --no-restore
 
     - name: Publish
-      run: dotnet publish -c Release --self-contained -r win-x64 -p:PublishSingleFile=true --no-build
+      run: dotnet publish -c Release --self-contained -r win-x64 -p:PublishSingleFile=true -p:IncludeAllContentForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false --no-build
 
     - name: Create Release
       uses: actions/create-release@v1
