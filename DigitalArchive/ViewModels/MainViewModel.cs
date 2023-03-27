@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using System.Windows.Threading;
 
 namespace DigitalArchive.ViewModels;
 
@@ -38,10 +39,10 @@ public partial class MainViewModel : ObservableObject
     private string? _displayPath;
 
     [ObservableProperty]
-    private ObservableCollection<ArchiveItem> _archiveItems = new();
+    private ObservableCollection<FileItem> _archiveItems = new();
 
     [ObservableProperty]
-    private ArchiveItem? _selectedArchiveItem;
+    private FileItem? _selectedArchiveItem;
 
     [ObservableProperty]
     private ObservableCollection<ArchiveCategory> _archiveCategories = new();
@@ -76,9 +77,9 @@ public partial class MainViewModel : ObservableObject
     private void UpdateArchiveItems()
     {
         if (SelectedArchiveCategory is null)
-            ArchiveItems.Clear();
+            Dispatcher.CurrentDispatcher.Invoke(() => ArchiveItems.Clear());
         else
-            ArchiveItems = new ObservableCollection<ArchiveItem>(_fileSystemService.GetArchiveItems(SelectedArchiveCategory.Path));
+            ArchiveItems = new ObservableCollection<FileItem>(_fileSystemService.GetArchiveItems(SelectedArchiveCategory.Path));
     }
 
     [RelayCommand(CanExecute = nameof(CanProcessFile))]
@@ -91,23 +92,51 @@ public partial class MainViewModel : ObservableObject
         Task.Run(async () =>
         {
             await Task.Delay(100);
-            _fileSystemService.MoveToOutputFolder(item!.Path, NextIndex);
+
+            var selectedOutputFolders = GetSelectedOutputFolders(OutputItems).Select(x => x.Path).ToArray();
+
+            try
+            {
+                _fileSystemService.MoveToOutputFolder(item!.Path, selectedOutputFolders, NextIndex);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
         });
     }
 
-    private bool CanProcessFile() => SelectedInputItem is not null && SelectedInputItem.Type == ExplorerItemType.File;
+    private IEnumerable<FolderItem> GetSelectedOutputFolders(IEnumerable<ExplorerItem> items)
+    {
+        var selectedFolders = new List<FolderItem>();
+
+        foreach (var item in items)
+        {
+            if (item is FolderItem folderItem)
+            {
+                if (folderItem.IsSelected)
+                    selectedFolders.Add(folderItem);
+
+                selectedFolders.AddRange(GetSelectedOutputFolders(folderItem.Children));
+            }
+        }
+
+        return selectedFolders;
+    }
+
+    private bool CanProcessFile() => SelectedInputItem is FileItem;
 
     partial void OnSelectedInputItemChanged(ExplorerItem? value)
     {
-        DisplayPath = (value is not null && value.Type == ExplorerItemType.File) ? value.Path : null;
+        DisplayPath = (value is FileItem) ? value.Path : null;
     }
 
     partial void OnSelectedOutputItemChanged(ExplorerItem? value)
     {
-        DisplayPath = (value is not null && value.Type == ExplorerItemType.File) ? value.Path : null;
+        DisplayPath = (value is FileItem) ? value.Path : null;
     }
 
-    partial void OnSelectedArchiveItemChanged(ArchiveItem? value)
+    partial void OnSelectedArchiveItemChanged(FileItem? value)
     {
         DisplayPath = (value is not null) ? value.Path : null;
     }

@@ -44,6 +44,17 @@ public partial class FileExplorerView : UserControl
         DependencyProperty.Register("SelectedItem", typeof(ExplorerItem), typeof(FileExplorerView), new PropertyMetadata(null));
 
 
+    public bool ShowCheckBox
+    {
+        get { return (bool)GetValue(ShowCheckBoxProperty); }
+        set { SetValue(ShowCheckBoxProperty, value); }
+    }
+
+    // Using a DependencyProperty as the backing store for ShowCheckBox.  This enables animation, styling, binding, etc...
+    public static readonly DependencyProperty ShowCheckBoxProperty =
+        DependencyProperty.Register("ShowCheckBox", typeof(bool), typeof(FileExplorerView), new PropertyMetadata(false));
+
+
 
     public FileExplorerView()
     {

@@ -41,11 +41,11 @@ public partial class MainWindow : Window
     {
         if (e.PropertyName == nameof(MainViewModel.DisplayPath))
         {
-            PdfViewer.Navigate("about:blank");
+            FileViewer.Navigate("about:blank");
             
             if (_viewModel.DisplayPath is not null)
             {
-                PdfViewer.Navigate(_viewModel.DisplayPath);
+                FileViewer.Navigate(_viewModel.DisplayPath);
             }
         }
     }

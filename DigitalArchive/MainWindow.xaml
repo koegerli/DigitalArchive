@@ -35,7 +35,7 @@
 
         <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Center" />
 
-        <WebBrowser x:Name="PdfViewer" Grid.Column="2" />
+        <WebBrowser x:Name="FileViewer" Grid.Column="2" />
 
         <GridSplitter Grid.Column="3" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" />
 
@@ -55,11 +55,20 @@
 
             <ComboBox Grid.Row="1" ItemsSource="{Binding ArchiveCategories}" SelectedItem="{Binding SelectedArchiveCategory, Mode=TwoWay}" DisplayMemberPath="Name" />
 
-            <ListView Grid.Row="2" ItemsSource="{Binding ArchiveItems}" SelectedItem="{Binding SelectedArchiveItem, Mode=TwoWay}" DisplayMemberPath="Name" />
+            <ListView Grid.Row="2" ItemsSource="{Binding ArchiveItems}" SelectedItem="{Binding SelectedArchiveItem, Mode=TwoWay}">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,5,0" />
+                            <TextBlock Text="{Binding Name}" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
 
             <GridSplitter Grid.Row="3" Height="5" HorizontalAlignment="Stretch" VerticalAlignment="Center" />
 
-            <views:FileExplorerView Grid.Row="4" Items="{Binding OutputItems}" SelectedItem="{Binding SelectedOutputItem, Mode=TwoWay}" />
+            <views:FileExplorerView Grid.Row="4" Items="{Binding OutputItems}" SelectedItem="{Binding SelectedOutputItem, Mode=TwoWay}" ShowCheckBox="True" />
 
         </Grid>
 

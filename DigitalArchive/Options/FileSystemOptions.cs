@@ -10,6 +10,6 @@ public class FileSystemOptions
 {
     public static string SectionName => "FileSystem";
 
-    public string InputPath { get; set; }
+    public string[] InputPaths { get; set; }
     public string OutputPath { get; set; }
 }
