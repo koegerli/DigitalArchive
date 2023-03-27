@@ -36,6 +36,12 @@ jobs:
     - name: Publish
       run: dotnet publish -c Release --self-contained -r win-x64 -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false --no-build
 
+    - name: Create Zip
+      uses: vimtor/action-zip@v1
+      with:
+        files: DigitalArchive/DigitalArchive/bin/Release/net6.0-windows/win-x64/publish/*
+        dest: DigitalArchive/DigitalArchive/bin/Release/net6.0-windows/win-x64/publish/DigitalArchive.zip
+
     - name: Create Release
       uses: actions/create-release@v1
       id: create_release
@@ -49,6 +55,6 @@ jobs:
       uses: csexton/release-asset-action@v2
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        pattern: D:/a/DigitalArchive/DigitalArchive/DigitalArchive/bin/Release/net6.0-windows/win-x64/publish/*
+        pattern: D:/a/DigitalArchive/DigitalArchive/DigitalArchive/bin/Release/net6.0-windows/win-x64/publish/DigitalArchive.zip
         release-url: ${{ steps.create_release.outputs.upload_url }}
         
