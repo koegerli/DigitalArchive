@@ -39,8 +39,8 @@ jobs:
     - name: Create Zip
       uses: vimtor/action-zip@v1
       with:
-        files: DigitalArchive/DigitalArchive/bin/Release/net6.0-windows/win-x64/publish/*
-        dest: DigitalArchive/DigitalArchive/bin/Release/net6.0-windows/win-x64/publish/DigitalArchive.zip
+        files: D:/a/DigitalArchive/DigitalArchive/DigitalArchive/bin/Release/net6.0-windows/win-x64/publish/*
+        dest: D:/a/DigitalArchive/DigitalArchive/DigitalArchive/bin/Release/net6.0-windows/win-x64/publish/DigitalArchive.zip
 
     - name: Create Release
       uses: actions/create-release@v1
