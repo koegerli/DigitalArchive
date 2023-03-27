@@ -20,6 +20,7 @@ public partial class App : Application
 
     public App()
     {
+        //This is a test
         _configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: false)
