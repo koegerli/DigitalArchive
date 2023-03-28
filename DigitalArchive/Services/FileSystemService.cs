@@ -1,42 +1,69 @@
-﻿using DigitalArchive.Models;
+﻿using CommunityToolkit.Mvvm.DependencyInjection;
+using DigitalArchive.Models;
 using DigitalArchive.Options;
+using IWshRuntimeLibrary;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+using System.Xml.Linq;
+using File = System.IO.File;
 
 namespace DigitalArchive.Services;
 
 public class FileSystemService
 {
-    private readonly string _inputFolderPath;
+    private readonly string[] _inputFolderPaths;
     private readonly string _outputFolderPath;
 
-    private readonly FileSystemWatcher _inputWatcher;
+    private readonly FileSystemWatcher[] _inputWatchers;
     private readonly FileSystemWatcher _outputWatcher;
+
+    private readonly Dictionary<string, ImageSource?> _iconCache = new();
 
     public event EventHandler? InputItemsChanged;
     public event EventHandler? OutputItemsChanged;
 
     public FileSystemService(IOptions<FileSystemOptions> options)
     {
-        _inputFolderPath = options.Value.InputPath;
+        _inputFolderPaths = options.Value.InputPaths;
         _outputFolderPath = options.Value.OutputPath;
 
-        Directory.CreateDirectory(_inputFolderPath);
-        Directory.CreateDirectory(_outputFolderPath);
+        CreateDirectories();
 
-        _inputWatcher = CreateWatcher(_inputFolderPath, () => InputItemsChanged?.Invoke(this, EventArgs.Empty));
+        _inputWatchers = CreateWatchers(_inputFolderPaths, () => InputItemsChanged?.Invoke(this, EventArgs.Empty));
         _outputWatcher = CreateWatcher(_outputFolderPath, () => OutputItemsChanged?.Invoke(this, EventArgs.Empty));
+    }
+
+    private void CreateDirectories()
+    {
+        foreach (var inputPath in _inputFolderPaths)
+        {
+            Directory.CreateDirectory(inputPath);
+        }
+        Directory.CreateDirectory(_outputFolderPath);
+    }
+
+    private FileSystemWatcher[] CreateWatchers(string[] paths, Action handler)
+    {
+        return paths.Select(x => CreateWatcher(x, handler)).ToArray();
     }
 
     private FileSystemWatcher CreateWatcher(string path, Action handler)
     {
         var watcher = new FileSystemWatcher(path);
-        
+
         watcher.IncludeSubdirectories = true;
         watcher.Changed += (_, __) => handler();
         watcher.Deleted += (_, __) => handler();
@@ -47,28 +74,48 @@ public class FileSystemService
         return watcher;
     }
 
-    public IEnumerable<ExplorerItem> GetInputItems() => GetExplorerItems(_inputFolderPath, "*.pdf", includeEmptyFolders: false);
-    public IEnumerable<ExplorerItem> GetOutputItems() => GetExplorerItems(_outputFolderPath, "*.pdf", includeEmptyFolders: true);
+    public IEnumerable<ExplorerItem> GetInputItems() => GetExplorerItems(_inputFolderPaths, "*.*", includeEmptyFolders: false);
+    public IEnumerable<ExplorerItem> GetOutputItems() => GetExplorerItems(new[] { _outputFolderPath }, "*.*", includeEmptyFolders: true);
 
-    public IEnumerable<ArchiveItem> GetArchiveItems(string path)
+    public IEnumerable<FileItem> GetArchiveItems(string path)
     {
-        return Directory.EnumerateFiles(path, "*.pdf", SearchOption.AllDirectories)
-            .Select(CreateArchiveItem);
+        return Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories)
+            .Select(CreateFileItem);
     }
 
     public IEnumerable<ArchiveCategory> GetArchiveCategories()
     {
         return Directory.EnumerateDirectories(_outputFolderPath, "*", SearchOption.AllDirectories)
-            .Where(x => Directory.EnumerateFiles(x, "*.pdf", SearchOption.AllDirectories).Any())
+            .Where(x => Directory.EnumerateFiles(x, "*.*", SearchOption.AllDirectories).Any())
             .Select(CreateArchiveCategory);
     }
 
-    public void MoveToOutputFolder(string inputPath, int index)
+    public void MoveToOutputFolder(string inputPath, string[] selectedOutputPaths, int index)
     {
         var outputFolder = Path.Combine(_outputFolderPath, DateTime.Now.Year.ToString());
         Directory.CreateDirectory(outputFolder);
-        var outputPath = Path.Combine(outputFolder, $"{index}.pdf");
-        File.Move(inputPath, outputPath);
+
+        var fileExtension = Path.GetExtension(inputPath);
+        var targetFileName = $"{index}{fileExtension}";
+        var targetPath = Path.Combine(outputFolder, targetFileName);
+
+        File.Move(inputPath, targetPath);
+
+        foreach (var selectedOutputPath in selectedOutputPaths)
+        {
+            CreateShortcut(selectedOutputPath, targetPath);
+        }
+    }
+
+    private void CreateShortcut(string outputPath, string targetPath)
+    {
+        var fileName = Path.GetFileNameWithoutExtension(targetPath);
+        var shortcutPath = Path.Combine(outputPath, $"{fileName}.lnk");
+
+        var shell = new WshShell();
+        var shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
+        shortcut.TargetPath = targetPath;
+        shortcut.Save();
     }
 
     public int GetHighestNumberInOutput()
@@ -82,59 +129,69 @@ public class FileSystemService
             })
             .Where(x => x.IsNumber);
 
-        return numberedFiles.Any() 
+        return numberedFiles.Any()
             ? numberedFiles.Max(x => x.Number)
             : 0;
     }
 
-    private IEnumerable<ExplorerItem> GetExplorerItems(string path, string filePattern, bool includeEmptyFolders)
+    private IEnumerable<FolderItem> GetExplorerItems(string[] paths, string filePattern, bool includeEmptyFolders)
+    {
+        return paths.Select(x => GetExplorerItem(x, filePattern, includeEmptyFolders));
+    }
+
+    private FolderItem GetExplorerItem(string path, string filePattern, bool includeEmptyFolders)
     {
         var folders = Directory.GetDirectories(path)
-            .Select(x =>
-            {
-                var items = GetExplorerItems(x, filePattern, includeEmptyFolders);
-                if (items.Any() || includeEmptyFolders)
-                {
-                    return CreateFolderItem(x, items);
-                }
-                return null; 
-            })
-            .Where(x => x is not null);
+            .Select(x => GetExplorerItem(x, filePattern, includeEmptyFolders))
+            .Where(x => x.Children.Any() || includeEmptyFolders);
 
         var files = Directory.GetFiles(path, filePattern)
             .Select(CreateFileItem);
 
-        return Enumerable.Concat(folders, files);
+        var children = folders.Cast<ExplorerItem>().Concat(files);
+
+        return CreateFolderItem(path, children);
     }
 
-    private ExplorerItem CreateFileItem(string path)
+    private FileItem CreateFileItem(string path)
     {
-        return new ExplorerItem
+        return new FileItem
         {
             Name = Path.GetFileName(path),
             Path = path,
-            Children = Enumerable.Empty<ExplorerItem>(),
-            Type = ExplorerItemType.File,
+            Icon = GetIconAndStoreInCache(path),
         };
     }
 
-    private ExplorerItem CreateFolderItem(string path, IEnumerable<ExplorerItem> children)
+    private ImageSource? GetIconAndStoreInCache(string path)
     {
-        return new ExplorerItem
+        var extension = Path.GetExtension(path);
+        if (!_iconCache.TryGetValue(extension, out ImageSource? iconSource))
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                using var icon = Icon.ExtractAssociatedIcon(path);
+                if (icon is null)
+                {
+                    _iconCache.Add(extension, null);
+                    return;
+                }
+
+                iconSource = Imaging.CreateBitmapSourceFromHIcon(icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+                _iconCache.Add(extension, iconSource);
+            });
+
+        }
+        return _iconCache[extension];
+    }
+
+    private FolderItem CreateFolderItem(string path, IEnumerable<ExplorerItem> children)
+    {
+        return new FolderItem
         {
             Name = Path.GetFileName(path),
             Path = path,
             Children = children.ToList(),
-            Type = ExplorerItemType.Folder,
-        };
-    }
-
-    private ArchiveItem CreateArchiveItem(string path)
-    {
-        return new ArchiveItem
-        {
-            Name = Path.GetFileName(path),
-            Path = path,
         };
     }
 

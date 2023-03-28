@@ -8,6 +8,10 @@
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=local:FileExplorerView, IsDesignTimeCreatable=False}"
              d:DesignHeight="450" d:DesignWidth="800">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisConv" />
+    </UserControl.Resources>
     
     <Grid x:Name="MainGrid">
 
@@ -17,11 +21,22 @@
                     <Setter Property="IsExpanded" Value="True" />
                 </Style>
             </TreeView.ItemContainerStyle>
-            <TreeView.ItemTemplate>
-                <HierarchicalDataTemplate DataType="{x:Type model:ExplorerItem}" ItemsSource="{Binding Children}">
-                    <TextBlock Text="{Binding Name}" />
+            <TreeView.Resources>
+                <HierarchicalDataTemplate DataType="{x:Type model:FolderItem}" ItemsSource="{Binding Children}">
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" Margin="0,0,5,0"
+                                  Visibility="{Binding ElementName=Explorer, Path=DataContext.ShowCheckBox, Converter={StaticResource BoolToVisConv}}" />
+                        <Image Source="pack://application:,,,/Images/icon-folder.png" Width="16" Height="16" Margin="0,0,5,0" />
+                        <TextBlock Text="{Binding Name}" />
+                    </StackPanel>
                 </HierarchicalDataTemplate>
-            </TreeView.ItemTemplate>
+                <DataTemplate DataType="{x:Type model:FileItem}">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,5,0" />
+                        <TextBlock Text="{Binding Name}" />
+                    </StackPanel>
+                </DataTemplate>
+            </TreeView.Resources>
         </TreeView>
 
     </Grid>
